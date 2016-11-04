@@ -8,17 +8,16 @@
         $scope.stories = []; 
         
         
-        function loadStories(){
+        function loadStories(params,callback){
             
              $http.get('https://www.reddit.com/r/news/ads/.json',{params: params})
                 .success(function(response){
-                    //console.log(response.data.children);
+                    var stories = [];
                     angular.forEach(response.data.children, function(child){
-                    //console.log(child.data);
-                    $scope.stories.push(child.data);
-                });
+                       stories.push(child.data);
+                    });
                 
-                 $scope.$broadcast('scroll.infiniteScrollComplete');
+                    callback(stories);
             });
             
             
@@ -32,28 +31,26 @@
             if($scope.stories.length > 0){
                 params['after'] = $scope.stories[$scope.stories.length -1].name;
             }
-            $http.get('https://www.reddit.com/r/news/ads/.json',{params: params})
-                .success(function(response){
-                    //console.log(response.data.children);
-                    angular.forEach(response.data.children, function(child){
-                    //console.log(child.data);
-                    $scope.stories.push(child.data);
-                });
+            
+            loadStories(params, function(olderStories){
                 
-                 $scope.$broadcast('scroll.infiniteScrollComplete');
-            });
-            
-            
+                $scope.stories = $scope.stories.concat(olderStories);
+                $scope.$broadcast('scroll.infiniteScrollComplete');
+            });   
         };
         
         
-        $scope.loadNewerStories() = function(){
+        $scope.loadNewerStories = function(){
             
+            var params = {'before': $scope.stories[0].name};
             
+            loadStories(params, function(newerStories){
+                
+                $scope.stories = newerStories.concat($scope.stories);
+                 $scope.$broadcast('scroll.refreshComplete');
+            });   
             
         };
-        
-        
         
     });
     
